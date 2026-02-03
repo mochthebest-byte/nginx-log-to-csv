@@ -1,0 +1,31 @@
+name: Nginx log to CSV
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  parse-log:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run parser
+        run: |
+          python parser.py \
+            -i data/nginx.log \
+            -o data/output.csv
+
+      - name: Verify output CSV exists
+        run: |
+          test -f data/output.csv
+          head -n 5 data/output.csv
