@@ -5,7 +5,7 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -23,40 +23,34 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies (if requirements.txt exists)
+      - name: Install dependencies
         run: |
-          set -euo pipefail
-          if [ -f requirements.txt ]; then
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-          else
-            echo "requirements.txt not found, skipping deps install"
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Prepare input log
+        run: |
+          set -euxo pipefail
+          ls -la data || true
+
+          # If nginx.log missing but sample exists, copy it
+          if [ ! -f data/nginx.log ] && [ -f data/nginx.sample.log ]; then
+            cp data/nginx.sample.log data/nginx.log
           fi
 
-      - name: Ensure input log exists
-        run: |
-          set -euo pipefail
-          ls -la data || true
-          test -f data/nginx.sample.log
+          test -f data/nginx.log
+          echo "Using input:"
+          ls -la data/nginx.log
 
       - name: Run parser
         run: |
-          set -euo pipefail
-          python parser.py \
-            -i data/nginx.sample.log \
-            -o data/output.csv
-
-      - name: Verify output CSV exists and preview
-        run: |
-          set -euo pipefail
-          test -f data/output.csv
-          echo "=== output.csv (first 5 lines) ==="
+          set -euxo pipefail
+          python parser.py -i data/nginx.log -o data/output.csv
+          test -s data/output.csv
           head -n 5 data/output.csv
 
-      - name: Upload output.csv artifact
+      - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
         with:
           name: output-csv
           path: data/output.csv
-          if-no-files-found: error
-          retention-days: 7
