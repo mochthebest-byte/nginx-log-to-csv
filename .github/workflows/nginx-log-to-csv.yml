@@ -2,9 +2,10 @@ name: Nginx log to CSV
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   parse-log:
@@ -22,7 +23,7 @@ jobs:
       - name: Run parser
         run: |
           python parser.py \
-            -i data/nginx.log \
+            -i data/nginx.sample.log \
             -o data/output.csv
 
       - name: Verify output CSV exists
